@@ -57,7 +57,7 @@ class PositionalCharacterLevelWordEmbedding(Module):
 
         self.l_pos_embedding = Embedding(num_embeddings=max_positional,
                                          embedding_dim=embedding_dim,
-                                         padding_idx=None)
+                                         padding_idx=padding_idx)
 
     def forward(self, token_ids, position_ids):
         """

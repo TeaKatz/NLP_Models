@@ -1,1 +1,1 @@
-from .WordEmbedding import CharacterLevelWordEmbedding, PositionalCharacterLevelWordEmbedding
+from .WordEmbedding import CharacterLevelWordEmbedding, PositionalCharacterLevelWordEmbedding, NgramLevelWordEmbedding
