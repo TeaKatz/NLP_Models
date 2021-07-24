@@ -3,6 +3,44 @@ import torch
 from torch.nn import Module, Embedding
 
 
+class CharacterLevelWordSparseEncoding(Module):
+    mode_options = ["sum", "mean", "max", "none"]
+
+    def __init__(self, num_embeddings, padding_idx=0, mode="sum"):
+        assert mode in self.mode_options
+
+        super().__init__()
+        self.num_embeddings = num_embeddings
+        self.padding_idx = padding_idx
+        self.mode = mode
+
+    def forward(self, token_ids):
+        """
+        token_ids: (batch_size, words_num, word_length)
+
+        Return
+        word_vecs:  (batch_size, words_num, num_embeddings) if mode is ("sum", "mean", "max")
+                    (batch_size, words_num, word_length, num_embeddings) otherwise
+        """
+        # (batch_size, words_num, word_length, num_embeddings)
+        word_vecs = torch.nn.functional.one_hot(token_ids, self.num_embeddings)
+        word_vecs[:, :, :, self.padding_idx] = 0
+
+        if self.mode == "sum":
+            # (batch_size, words_num, num_embeddings)
+            word_vecs = torch.sum(word_vecs, dim=2)
+        elif self.mode == "mean":
+            # (batch_size, words_num, 1)
+            divider = torch.sum(token_ids != 0, dim=-1, keepdim=True)
+            # (batch_size, words_num, num_embeddings)
+            word_vecs = torch.sum(word_vecs, dim=2)
+            word_vecs = word_vecs / divider
+        elif self.mode == "max":
+            # (batch_size, words_num, num_embeddings)
+            word_vecs = torch.max(word_vecs, dim=2)[0]
+        return word_vecs
+
+
 class CharacterLevelWordEmbedding(Module):
     mode_options = ["sum", "mean", "max", "none"]
 
@@ -38,6 +76,51 @@ class CharacterLevelWordEmbedding(Module):
             word_vecs = word_vecs / divider
         elif self.mode == "max":
             # (batch_size, words_num, embedding_dim)
+            word_vecs = torch.max(word_vecs, dim=2)[0]
+        return word_vecs
+
+
+class PositionalCharacterLevelWordSparseEncoding(Module):
+    mode_options = ["sum", "mean", "max", "none"]
+
+    def __init__(self, num_embeddings, padding_idx=0, max_positional=10, mode="sum"):
+        assert mode in self.mode_options
+
+        super().__init__()
+        self.num_embeddings = num_embeddings
+        self.padding_idx = padding_idx
+        self.max_positional = max_positional
+        self.mode = mode
+
+    def forward(self, token_ids, position_ids):
+        """
+        token_ids: (batch_size, words_num, word_length)
+        position_ids: (batch_size, words_num, word_length)
+
+        Return
+        word_vecs:  (batch_size, words_num, num_embeddings + max_positional) if mode is ("sum", "mean", "max")
+                    (batch_size, words_num, word_length, num_embeddings + max_positional) otherwise
+        """
+        # (batch_size, words_num, word_length, num_embeddings)
+        word_vecs = torch.nn.functional.one_hot(token_ids, self.num_embeddings)
+        word_vecs[:, :, :, self.padding_idx] = 0
+        # (batch_size, words_num, word_length, max_positional)
+        pos_vecs = torch.nn.functional.one_hot(position_ids, self.max_positional)
+        pos_vecs[:, :, :, self.padding_idx] = 0
+        # (batch_size, words_num, word_length, num_embeddings + max_positional)
+        word_vecs = torch.cat([word_vecs, pos_vecs], dim=-1)
+
+        if self.mode == "sum":
+            # (batch_size, words_num, num_embeddings + max_positional)
+            word_vecs = torch.sum(word_vecs, dim=2)
+        elif self.mode == "mean":
+            # (batch_size, words_num, 1)
+            divider = torch.sum(token_ids != 0, dim=-1, keepdim=True)
+            # (batch_size, words_num, num_embeddings + max_positional)
+            word_vecs = torch.sum(word_vecs, dim=2)
+            word_vecs = word_vecs / divider
+        else:
+            # (batch_size, words_num, num_embeddings + max_positional)
             word_vecs = torch.max(word_vecs, dim=2)[0]
         return word_vecs
 
