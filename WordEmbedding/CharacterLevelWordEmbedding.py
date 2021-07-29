@@ -186,29 +186,36 @@ class RNNCharacterLevelWordEmbedding(Module):
                        num_layers=num_layers,
                        batch_first=True)
 
-    def forward(self, token_ids):
+    def forward(self, token_ids, true_lengths=None):
         """
         token_ids: (batch_size, words_num, word_length)
+        true_lengths: (batch_size, words_num)
 
         Return
-        word_vecs:  (batch_size, words_num, embedding_dim) if mode is ("sum", "mean", "max")
-                    (batch_size, words_num, word_length, embedding_dim) otherwise
+        word_vecs:  (batch_size, words_num, embedding_dim)
         """
         batch_size, words_num, word_length = token_ids.shape
 
         # (batch_size, words_num, word_length, embedding_dim)
         word_vecs = self.embedding(token_ids)
 
-        # (1, batch_size, embedding_dim)
+        # (1, batch_size * words_num, embedding_dim)
         h0 = torch.zeros(1, batch_size * words_num, self.embedding_dim)
         
         # (batch_size * words_num, word_length, embedding_dim)
         word_vecs = word_vecs.view(batch_size * words_num, word_length, -1)
         word_vecs, _ = self.rnn(word_vecs, h0)
 
-        # (batch_size, words_num, word_length, embedding_dim)
-        word_vecs = word_vecs.view(batch_size, words_num, word_length, -1)
-        return word_vecs[:, :, -1]
+        # (batch_size * words_num, embedding_dim)
+        if true_lengths is not None:
+            true_lengths = true_lengths.view(batch_size * words_num)
+            word_vecs = word_vecs[torch.arange(word_vecs.size(0)), true_lengths - 1]
+        else:
+            word_vecs = word_vecs[:, -1]
+
+        # (batch_size, words_num, embedding_dim)
+        word_vecs = word_vecs.view(batch_size, words_num, -1)
+        return word_vecs
 
 
 class GRUCharacterLevelWordEmbedding(RNNCharacterLevelWordEmbedding):
@@ -237,20 +244,20 @@ class LSTMCharacterLevelWordEmbedding(Module):
                         num_layers=num_layers,
                         batch_first=True)
 
-    def forward(self, token_ids):
+    def forward(self, token_ids, true_lengths=None):
         """
         token_ids: (batch_size, words_num, word_length)
+        true_lengths: (batch_size, words_num)
 
         Return
-        word_vecs:  (batch_size, words_num, embedding_dim) if mode is ("sum", "mean", "max")
-                    (batch_size, words_num, word_length, embedding_dim) otherwise
+        word_vecs:  (batch_size, words_num, embedding_dim)
         """
         batch_size, words_num, word_length = token_ids.shape
 
         # (batch_size, words_num, word_length, embedding_dim)
         word_vecs = self.embedding(token_ids)
 
-        # (1, batch_size, embedding_dim)
+        # (1, batch_size * words_num, embedding_dim)
         h0 = torch.zeros(1, batch_size * words_num, self.embedding_dim)
         c0 = torch.zeros(1, batch_size * words_num, self.embedding_dim)
         
@@ -258,6 +265,13 @@ class LSTMCharacterLevelWordEmbedding(Module):
         word_vecs = word_vecs.view(batch_size * words_num, word_length, -1)
         word_vecs, _ = self.rnn(word_vecs, (h0, c0))
 
-        # (batch_size, words_num, word_length, embedding_dim)
-        word_vecs = word_vecs.view(batch_size, words_num, word_length, -1)
-        return word_vecs[:, :, -1]
+        # (batch_size * words_num, embedding_dim)
+        if true_lengths is not None:
+            true_lengths = true_lengths.view(batch_size * words_num)
+            word_vecs = word_vecs[torch.arange(word_vecs.size(0)), true_lengths - 1]
+        else:
+            word_vecs = word_vecs[:, -1]
+
+        # (batch_size, words_num, embedding_dim)
+        word_vecs = word_vecs.view(batch_size, words_num, -1)
+        return word_vecs
