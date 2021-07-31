@@ -23,7 +23,7 @@ class CharacterLevelWordSparseEncoding(Module):
                     (batch_size, words_num, word_length, num_embeddings) otherwise
         """
         # (batch_size, words_num, word_length, num_embeddings)
-        word_vecs = torch.nn.functional.one_hot(token_ids, self.num_embeddings)
+        word_vecs = torch.nn.functional.one_hot(token_ids, self.num_embeddings).float()
         word_vecs[:, :, :, self.padding_idx] = 0
 
         if self.mode == "sum":
