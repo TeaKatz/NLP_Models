@@ -9,7 +9,8 @@ from .CharacterLevelWordEmbedding import LSTMCharacterLevelWordEmbedding
 from .NgramLevelWordEmbedding import NgramLevelWordEmbedding
 from .NgramLevelWordEmbedding import NgramLevelWordSparseEncoding
 
-from .MultiSpacesWordEmbedding import NonlinearTransformation
-from .MultiSpacesWordEmbedding import PassThroughAuxiliarySpaceWordEmbedding
-from .MultiSpacesWordEmbedding import SummationAuxiliarySpaceWordEmbedding
-from .MultiSpacesWordEmbedding import AveragingAuxiliarySpaceWordEmbedding
+from .MultiHopWordEmbedding import NonlinearTransformation
+from .MultiHopWordEmbedding import MultiHopWordEmbedding
+from .MultiHopWordEmbedding import HopThroughPhoneticSpaceWordEmbedding
+from .MultiHopWordEmbedding import SummationPhoneticSpaceWordEmbedding
+from .MultiHopWordEmbedding import AveragingPhoneticSpaceWordEmbedding

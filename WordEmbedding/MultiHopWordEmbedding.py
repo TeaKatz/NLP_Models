@@ -46,49 +46,52 @@ class NonlinearTransformation(Module):
         return outputs
 
 
-class PassThroughAuxiliarySpaceWordEmbedding(Module):
-    def __init__(self, primary_embedding, primary2auxiliary, auxiliary2target):
+class MultiHopWordEmbedding(Module):
+    def __init__(self, word2vec_model, vec2vec_models, routing=None):
         super().__init__()
-        self.primary_embedding = primary_embedding
-        self.primary2auxiliary = primary2auxiliary
-        self.auxiliary2target = auxiliary2target
+        if not isinstance(vec2vec_models, list):
+            vec2vec_models = [vec2vec_models]
+
+        self.word2vec_model = word2vec_model
+        self.vec2vec_models = ModuleList(vec2vec_models)
+        self.routing = routing
 
     def forward(self, *args, **kwargs):
-        pri_vecs = self.primary_embedding(*args, **kwargs)
-        aux_vecs = self.primary2auxiliary(pri_vecs)
-        tar_vecs = self.auxiliary2target(aux_vecs)
-        return tar_vecs
+        # Get output from word2vec model
+        outputs = [self.word2vec_model(*args, **kwargs)]
+        for i in range(len(self.vec2vec_models)):
+            # Get inputs for current vec2vec model
+            if isinstance(self.routing[i], list):
+                inputs = [outputs[idx] for idx in self.routing[i]]
+            else:
+                inputs = outputs[self.routing[i]]
+            # Get output from current vec2vec model
+            if isinstance(inputs, list):
+                outputs.append(self.vec2vec_models[i](*[outputs[inp] for inp in inputs]))
+            else:
+                outputs.append(self.vec2vec_models[i](outputs[inputs]))
+        return outputs
 
 
-class SummationAuxiliarySpaceWordEmbedding(Module):
-    def __init__(self, primary_embedding, primary2auxiliary, primary2target, auxiliary2target):
-        super().__init__()
-        self.primary_embedding = primary_embedding
-        self.primary2auxiliary = primary2auxiliary
-        self.primary2target = primary2target
-        self.auxiliary2target = auxiliary2target
-
-    def forward(self, *args, **kwargs):
-        pri_vecs = self.primary_embedding(*args, **kwargs)
-        aux_vecs = self.primary2auxiliary(pri_vecs)
-        tar1_vecs = self.primary2target(pri_vecs)
-        tar2_vecs = self.auxiliary2target(aux_vecs)
-        tar_vecs = tar1_vecs + tar2_vecs
-        return tar_vecs
+class HopThroughPhoneticSpaceWordEmbedding(MultiHopWordEmbedding):
+    def __init__(self, word2vec_model, phonetic_model, semantic_model):
+        super().__init__(word2vec_model, [phonetic_model, semantic_model])
 
 
-class AveragingAuxiliarySpaceWordEmbedding(Module):
-    def __init__(self, primary_embedding, primary2auxiliary, primary2target, auxiliary2target):
-        super().__init__()
-        self.primary_embedding = primary_embedding
-        self.primary2auxiliary = primary2auxiliary
-        self.primary2target = primary2target
-        self.auxiliary2target = auxiliary2target
+class SummationPhoneticSpaceWordEmbedding(MultiHopWordEmbedding):
+    def __init__(self, word2vec_model, phonetic_model, semantic_model1, semantic_model2):
+        super().__init__(word2vec_model, [phonetic_model, semantic_model1, semantic_model2], routing=[0, 0, 1])
 
     def forward(self, *args, **kwargs):
-        pri_vecs = self.primary_embedding(*args, **kwargs)
-        aux_vecs = self.primary2auxiliary(pri_vecs)
-        tar1_vecs = self.primary2target(pri_vecs)
-        tar2_vecs = self.auxiliary2target(aux_vecs)
-        tar_vecs = (tar1_vecs + tar2_vecs) / 2
-        return tar_vecs
+        outputs = super().forward(*args, **kwargs)
+        outputs.append(outputs[-1] + outputs[-2])
+        return outputs
+
+
+class AveragingPhoneticSpaceWordEmbedding(MultiHopWordEmbedding):
+    def __init__(self, word2vec_model, phonetic_model, semantic_model1, semantic_model2):
+        super().__init__(word2vec_model, [phonetic_model, semantic_model1, semantic_model2], routing=[0, 0, 1])
+
+    def forward(self, *args, **kwargs):
+        outputs = super().forward(*args, **kwargs)
+        outputs.append((outputs[-1] + outputs[-2]) / 2)

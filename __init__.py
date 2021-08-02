@@ -1,2 +1,18 @@
-from .WordEmbedding import *
+from .WordEmbedding import CharacterLevelWordEmbedding
+from .WordEmbedding import CharacterLevelWordSparseEncoding
+from .WordEmbedding import PositionalCharacterLevelWordEmbedding
+from .WordEmbedding import PositionalCharacterLevelWordSparseEncoding
+from .WordEmbedding import RNNCharacterLevelWordEmbedding
+from .WordEmbedding import GRUCharacterLevelWordEmbedding
+from .WordEmbedding import LSTMCharacterLevelWordEmbedding
+
+from .WordEmbedding import NgramLevelWordEmbedding
+from .WordEmbedding import NgramLevelWordSparseEncoding
+
+from .WordEmbedding import NonlinearTransformation
+from .WordEmbedding import MultiHopWordEmbedding
+from .WordEmbedding import HopThroughPhoneticSpaceWordEmbedding
+from .WordEmbedding import SummationPhoneticSpaceWordEmbedding
+from .WordEmbedding import AveragingPhoneticSpaceWordEmbedding
+
 from .ModelPipeline import ModelPipeline
