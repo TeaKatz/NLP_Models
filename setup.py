@@ -3,10 +3,10 @@ from os.path import basename, splitext
 from setuptools import find_packages, setup
 
 setup(
-    name="NLP_Models",
+    name="nlp_models",
     version="0.1",
     packages=find_packages(where="src"),
     package_dir={"": "src"},
-    py_modules=[splitext(basename(path))[0] for path in glob("src/NLP_Models/*.py")] + \
-               [splitext(basename(path))[0] for path in glob("src/NLP_Models/WordEmbedding/*.py")]
+    py_modules=[splitext(basename(path))[0] for path in glob("src/nlp_models/*.py")] + \
+               [splitext(basename(path))[0] for path in glob("src/nlp_models/word_embedding/*.py")]
 )
