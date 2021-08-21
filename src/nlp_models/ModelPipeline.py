@@ -20,5 +20,8 @@ class ModelPipeline:
             outputs = self.model(inputs)
 
         if self.return_numpy:
-            outputs = outputs.detach().numpy()
+            if isinstance(outputs, dict):
+                outputs = {key: val.detach().numpy() for key, val in outputs.items()}
+            else:
+                outputs = outputs.detach().numpy()
         return outputs
