@@ -1,2 +1,2 @@
-from .BertModel import ModifiedBertEmbeddings
-from .BertModel import ModifiedBertModel
+from .BertModel import FullwordBertEmbeddings
+from .BertModel import FullwordBertModel

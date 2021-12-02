@@ -5,7 +5,7 @@ from transformers.models.bert.modeling_bert import BertEmbeddings, BertEncoder, 
 from transformers.modeling_outputs import BaseModelOutputWithPoolingAndCrossAttentions
 
 
-class ModifiedBertEmbeddings(BertEmbeddings):
+class FullwordBertEmbeddings(BertEmbeddings):
     def forward(
         self, 
         input_ids=None,
@@ -54,12 +54,12 @@ class ModifiedBertEmbeddings(BertEmbeddings):
         return embeddings
 
 
-class ModifiedBertModel(BertModel):
+class FullwordBertModel(BertModel):
     def __init__(self, config, add_pooling_layer=True):
         super().__init__(config)
         self.config = config
 
-        self.embeddings = ModifiedBertEmbeddings(config)
+        self.embeddings = FullwordBertEmbeddings(config)
         self.encoder = BertEncoder(config)
 
         self.pooler = BertPooler(config) if add_pooling_layer else None
